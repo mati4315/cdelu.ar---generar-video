@@ -1191,8 +1191,8 @@ function buildTitleLayout(title, tuning = {}) {
     .flatMap((word) => splitLongWordStrict(word, titleMaxWordLength));
   const singleLineText = words.join(" ");
   const widthLimit = Math.floor(config.width * titleWidthRatio);
-  const widthSafety = Math.floor(widthLimit * 0.995);
-  const charFactor = 0.76;
+  const widthSafety = Math.floor(widthLimit * 0.88); // Añadimos padding para que no toque los bordes
+  const charFactor = 0.85; // Aumentamos factor de seguridad por caracter
 
   // Prioriza una sola linea: reduce font-size antes de partir en multiples lineas.
   for (let fontSize = (fitWidthMode ? fitWidthMaxFont : titleFontMax); fontSize >= titleFontMinPreferred; fontSize -= 1) {

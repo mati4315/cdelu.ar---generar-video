@@ -1,8 +1,8 @@
 {
   "batchQuantity": 1,
-  "resolution": "360",
+  "resolution": "720",
   "delaySecs": 10,
-  "skipTts": true,
+  "skipTts": false,
   "musicVolume": "0.14",
   "ttsVolume": "1",
   "bgBlurRadius": "",
@@ -11,8 +11,8 @@
   "zoomMin": "0",
   "zoomMax": "1.35",
   "panZoom": "",
-  "titleFontSize": "25",
-  "subtitleFontSize": "24",
+  "titleFontSize": "50",
+  "subtitleFontSize": "44",
   "customVideoPipeline": "",
   "savedPipelines": {
     "Dinámico Suave (Prueba exitosa)": "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10,eq=brightness=-0.35:saturation=1.1,zoompan=z='1.0+0.0018*in':x='(iw-iw/zoom)*(in/150)':y='ih/2-(ih/zoom/2)+sin(in/30)*15':d=1:s=1080x1920:fps=30,format=yuv420p[bg];\n[0:v]scale=1080:1400:force_original_aspect_ratio=increase,crop=1080:1400,zoompan=z='1.0+0.003*in':x='(iw-iw/zoom)*(in/120)':y='ih/2-(ih/zoom/2)+sin(in/25)*25':d=1:s=1080x1400:fps=30,unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=1.2:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg];\n[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1",
@@ -24,7 +24,7 @@
   "ttsMaxSpeed": "",
   "enableIntroLogo": "random",
   "subtitleYRatio": "0.80",
-  "testTts": true,
+  "testTts": false,
   "watermarkSize": "24",
   "watermarkMarginY": "16",
   "watermarkMarginX": "30"
