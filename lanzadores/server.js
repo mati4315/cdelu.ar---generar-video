@@ -234,4 +234,21 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`[Batch Orchestrator] Servidor en ejecucion en http://localhost:${PORT}`);
+  
+  // Si se pasa el argumento --start por consola, iniciamos el lote inmediatamente
+  if (process.argv.includes('--start')) {
+    fs.readFile(CONFIG_FILE, 'utf8', (err, data) => {
+      if (!err) {
+        try {
+          const config = JSON.parse(data);
+          addLog("Iniciando lote por comando CLI (--start)");
+          runBatchLogic(config);
+        } catch(e) {
+          console.error("Error al parsear config.json para auto-start:", e);
+        }
+      } else {
+        console.error("No se pudo leer config.json para auto-start:", err);
+      }
+    });
+  }
 });

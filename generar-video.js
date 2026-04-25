@@ -79,9 +79,8 @@ const config = {
   titleYRatio: parseFloatSafe(process.env.TITLE_Y_RATIO, 0.13),
 
   // Tamaño de la fuente del titulo 
-  titleFontSize: parseInteger(process.env.TITLE_FONT_SIZE, 21),
-
-  titleMinFontSize: parseInteger(process.env.TITLE_MIN_FONT_SIZE, 21),
+  titleFontSize: parseInteger(process.env.TITLE_FONT_SIZE, 52),
+  titleMinFontSize: parseInteger(process.env.TITLE_MIN_FONT_SIZE, 30),
   titleForceFontSize: parseInteger(process.env.TITLE_FORCE_FONT_SIZE, 0),
   titleFitWidth: parseBoolean(process.env.TITLE_FIT_WIDTH, true),
 
@@ -1332,12 +1331,12 @@ function getRenderTuning(currentConfig) {
     subtitleMinWordsPerChunk,
     wordsPerSecond,
     titleFontSize: hasTitleFontOverride
-      ? clampNumber(currentConfig.titleFontSize, 8, 180)
-      : clampNumber(Math.round(currentConfig.titleFontSize * widthScale), 10, currentConfig.titleFontSize),
+      ? clampNumber(currentConfig.titleFontSize, 12, 180)
+      : clampNumber(Math.round(currentConfig.titleFontSize * widthScale), 42, currentConfig.titleFontSize),
     titleMinFontSize: hasTitleMinFontOverride
-      ? clampNumber(currentConfig.titleMinFontSize, 8, 180)
-      : clampNumber(Math.round(currentConfig.titleMinFontSize * widthScale), 8, currentConfig.titleMinFontSize),
-    titleWidthRatio: clampNumber(currentConfig.titleWidthRatio, 0.68, 1),
+      ? clampNumber(currentConfig.titleMinFontSize, 10, 180)
+      : clampNumber(Math.round(currentConfig.titleMinFontSize * widthScale), 38, currentConfig.titleMinFontSize),
+    titleWidthRatio: clampNumber(currentConfig.titleWidthRatio, 0.75, 1),
     titleLineSpacing: clampNumber(Math.round(currentConfig.titleLineSpacing * widthScale), 2, currentConfig.titleLineSpacing),
     titleMaxCharsPerLine: hasTitleMaxCharsOverride
       ? clampNumber(currentConfig.titleMaxCharsPerLine, 12, 160)

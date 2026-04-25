@@ -10,7 +10,8 @@ Sistema automatizado de creación de videos en serie. Conecta con WordPress para
   - *Panel Avanzado:* Ajustes finos visuales, administración de perfiles FFmpeg personalizados (Pipelines), calibración de márgenes en los subtítulos, desenfoques y configuración del flujo de introducción.
 - **Dinamismo "Al Azar":** Capacidad para inyectar transiciones iniciales de forma aleatoria, además de seleccionar animaciones visuales diferentes para asegurar variedad masiva en tu contenido autogenerado.
 - **Sistema TTS Inteligente:** Generación automática de locución con Python. Incorpora sincronización automática que acelera sutilmente el audio para encajar en el límite máximo de duración (`maxDurationSec`). Incluye un modo **"Test (Usar último audio)"** que agiliza la calibración y el testing gráfico usando grabaciones en caché.
-- **Gestión de Marcas:** Implementación elegante y automática de marca de agua en la esquina inferior derecha con un 60% de transparencia, perfectamente sincronizada con la aparición de los primeros subtítulos.
+- **Gestión de Marcas:** Implementación de marca de agua configurable (tamaño y posición) en la esquina inferior derecha con un 60% de transparencia, sincronizada con la aparición de los subtítulos.
+- **Lanzadores Rápidos:** Archivos `.bat` para iniciar el panel visual o ejecutar el lote directamente desde la terminal.
 
 ## 🛠️ Tecnologías y Requisitos
 
@@ -29,8 +30,8 @@ Sistema automatizado de creación de videos en serie. Conecta con WordPress para
 
 ## 💻 Uso e Instrucciones
 
-1. **Iniciar el panel Web:** Ejecuta de ser posible el archivo `lanzar_panel.bat` (o manualmente ingresando a `node lanzadores/server.js` sobre la terminal).
-2. Dirigite a **`http://localhost:3005`**.
+1. **Iniciar el panel Web:** Ejecuta el archivo `lanzar_panel.bat`. Esto abrirá el navegador en **`http://localhost:3005`**.
+2. **Ejecutar Lote Directo:** Si ya tienes todo configurado de una sesión anterior y solo quieres procesar los videos sin abrir el navegador, ejecuta `lanzar_lote.bat`.
 3. **Configura el Flujo:**
    - Siéntete libre para explorar y cambiar el panel avanzado e inyectar pipelines. Puedes colocar la configuración de animación o el intro en modo "Al Azar".
    - Al marcar **Omitir TTS**, se habilitará a sus entrañas una segunda opción que permite probar cambios visuales utilizando la última locución existente en `C:\Texto a voz\salidas` sin agotar tiempos o cuotas de servidor.
