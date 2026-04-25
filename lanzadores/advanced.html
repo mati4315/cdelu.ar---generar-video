@@ -496,6 +496,31 @@
           </div>
         </div>
 
+        <h2 style="margin-top:20px;">Marca de Agua (Logo)</h2>
+        <div class="advanced-grid">
+          <div class="form-group-inline">
+            <label>Tamaño (%)</label>
+            <div class="range-wrapper">
+              <input type="range" id="watermarkSizeRange" min="5" max="50" step="1" oninput="sync('watermarkSizeRange','watermarkSize')">
+              <input type="number" id="watermarkSize" class="form-control" placeholder="15" oninput="sync('watermarkSize','watermarkSizeRange')">
+            </div>
+          </div>
+          <div class="form-group-inline">
+            <label title="Distancia desde el fondo">Margen Abajo (Y)</label>
+            <div class="range-wrapper">
+              <input type="range" id="watermarkMarginYRange" min="0" max="250" step="1" oninput="sync('watermarkMarginYRange','watermarkMarginY')">
+              <input type="number" id="watermarkMarginY" class="form-control" placeholder="40" oninput="sync('watermarkMarginY','watermarkMarginYRange')">
+            </div>
+          </div>
+        </div>
+        <div class="form-group-inline">
+          <label title="Distancia desde la derecha">Margen Derecho (X)</label>
+          <div class="range-wrapper">
+            <input type="range" id="watermarkMarginXRange" min="0" max="100" step="1" oninput="sync('watermarkMarginXRange','watermarkMarginX')">
+            <input type="number" id="watermarkMarginX" class="form-control" placeholder="30" oninput="sync('watermarkMarginX','watermarkMarginXRange')">
+          </div>
+        </div>
+
         <h2 style="margin-top:20px;">Tamaños de Texto (Manual)</h2>
         <div class="advanced-grid">
           <div class="form-group-inline">
@@ -579,9 +604,12 @@
         document.getElementById('ttsMaxSpeed').value = config.ttsMaxSpeed || "";
         document.getElementById('enableIntroLogo').value = String(config.enableIntroLogo !== undefined ? config.enableIntroLogo : "false");
         document.getElementById('subtitleYRatio').value = config.subtitleYRatio || "0.80";
+        document.getElementById('watermarkSize').value = config.watermarkSize !== undefined ? config.watermarkSize : "15";
+        document.getElementById('watermarkMarginY').value = config.watermarkMarginY !== undefined ? config.watermarkMarginY : "40";
+        document.getElementById('watermarkMarginX').value = config.watermarkMarginX !== undefined ? config.watermarkMarginX : "30";
 
         // Inicializar sliders
-        const numericIds = ['bgBlurRadius', 'bgBlurPower', 'bgBrightness', 'zoomMin', 'zoomMax', 'panZoom', 'titleFontSize', 'subtitleFontSize', 'maxDurationSec', 'ttsMaxSpeed', 'subtitleYRatio'];
+        const numericIds = ['bgBlurRadius', 'bgBlurPower', 'bgBrightness', 'zoomMin', 'zoomMax', 'panZoom', 'titleFontSize', 'subtitleFontSize', 'maxDurationSec', 'ttsMaxSpeed', 'subtitleYRatio', 'watermarkSize', 'watermarkMarginX', 'watermarkMarginY'];
         numericIds.forEach(id => {
           const val = document.getElementById(id).value;
           if (val) document.getElementById(id + 'Range').value = val;
@@ -632,6 +660,9 @@
         ttsMaxSpeed: document.getElementById('ttsMaxSpeed').value,
         enableIntroLogo: document.getElementById('enableIntroLogo').value,
         subtitleYRatio: document.getElementById('subtitleYRatio').value,
+        watermarkSize: document.getElementById('watermarkSize').value,
+        watermarkMarginY: document.getElementById('watermarkMarginY').value,
+        watermarkMarginX: document.getElementById('watermarkMarginX').value,
         customVideoPipeline: document.getElementById('customVideoPipeline').value,
         savedPipelines: window.savedPipelines,
         activePipelineName: window.activePipelineName

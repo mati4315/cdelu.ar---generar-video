@@ -33,7 +33,7 @@ Sistema automatizado de creación de videos en serie. Conecta con WordPress para
 2. Dirigite a **`http://localhost:3005`**.
 3. **Configura el Flujo:**
    - Siéntete libre para explorar y cambiar el panel avanzado e inyectar pipelines. Puedes colocar la configuración de animación o el intro en modo "Al Azar".
-   - Al marcar **Omitir TTS**, se habilitará a sus entrañas una segunda opción que permite probar cambios visuales utilizando la ultimá locución existente sin agotar tiempos o cuotas de servidor.
+   - Al marcar **Omitir TTS**, se habilitará a sus entrañas una segunda opción que permite probar cambios visuales utilizando la última locución existente en `C:\Texto a voz\salidas` sin agotar tiempos o cuotas de servidor.
 4. Confirma la cantidad y presiona **⚡ Empezar Lote**.
 
 ## ⚙️ Sobre Personalizaciones de FFmpeg (`filter_complex`)

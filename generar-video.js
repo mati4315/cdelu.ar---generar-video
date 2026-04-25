@@ -299,32 +299,39 @@ async function processPost(post, options) {
         console.log(`[tts] Sincronizando audio factor=${ttsSpeedFactor.toFixed(2)} (orig=${rawTtsDuration.toFixed(2)}s, final=${videoDurationSec.toFixed(2)}s)`);
       }
     } else if (options.testTts) {
-      console.log("[tts] Modo Test-TTS activo: Buscando ultimo audio generado...");
-      const files = await fsp.readdir(config.tmpAssetsDir);
-      const ttsFiles = files.filter(f => f.endsWith("-tts.wav"));
-      if (ttsFiles.length > 0) {
-        // Ordenar por fecha de modificación (el ultimo primero)
-        ttsFiles.sort((a, b) => {
-          return fs.statSync(path.join(config.tmpAssetsDir, b)).mtimeMs - fs.statSync(path.join(config.tmpAssetsDir, a)).mtimeMs;
-        });
-        ttsAudioPath = path.join(config.tmpAssetsDir, ttsFiles[0]);
-        console.log(`[tts] Reutilizando ultimo audio: ${ttsFiles[0]}`);
+      console.log("[tts] Modo Test-TTS activo: Buscando ultimo audio generado en C:\\Texto a voz\\salidas...");
+      const ttsExternalDir = "C:\\Texto a voz\\salidas";
+      try {
+        const files = await fsp.readdir(ttsExternalDir);
+        const ttsFiles = files.filter(f => f.endsWith(".wav"));
+        if (ttsFiles.length > 0) {
+          // Ordenar por fecha de modificación (el ultimo primero)
+          ttsFiles.sort((a, b) => {
+            return fs.statSync(path.join(ttsExternalDir, b)).mtimeMs - fs.statSync(path.join(ttsExternalDir, a)).mtimeMs;
+          });
+          ttsAudioPath = path.join(ttsExternalDir, ttsFiles[0]);
+          console.log(`[tts] Reutilizando ultimo audio externo: ${ttsFiles[0]}`);
 
-        const rawTtsDuration = await getMediaDurationSeconds(ttsAudioPath);
-        if (rawTtsDuration && rawTtsDuration >= 1) {
-          videoDurationSec = rawTtsDuration;
-          if (videoDurationSec > config.maxDurationSec) {
-            const requestedSpeed = rawTtsDuration / config.maxDurationSec;
-            ttsSpeedFactor = Math.min(requestedSpeed, config.ttsMaxSpeed);
-            videoDurationSec = rawTtsDuration / ttsSpeedFactor;
-            console.log(`[tts] Sincronizando audio factor=${ttsSpeedFactor.toFixed(2)}`);
+          const rawTtsDuration = await getMediaDurationSeconds(ttsAudioPath);
+          if (rawTtsDuration && rawTtsDuration >= 1) {
+            videoDurationSec = rawTtsDuration;
+            if (videoDurationSec > config.maxDurationSec) {
+              const requestedSpeed = rawTtsDuration / config.maxDurationSec;
+              ttsSpeedFactor = Math.min(requestedSpeed, config.ttsMaxSpeed);
+              videoDurationSec = rawTtsDuration / ttsSpeedFactor;
+              console.log(`[tts] Sincronizando audio factor=${ttsSpeedFactor.toFixed(2)}`);
+            }
+          } else {
+            const wordCount = cleanedBody.split(/\s+/).length || 1;
+            videoDurationSec = wordCount / config.wordsPerSecond;
           }
         } else {
+          console.log("[tts] No se encontro audio en C:\\Texto a voz\\salidas. Omitiendo.");
           const wordCount = cleanedBody.split(/\s+/).length || 1;
           videoDurationSec = wordCount / config.wordsPerSecond;
         }
-      } else {
-        console.log("[tts] No se encontro audio anterior para Test. Omitiendo.");
+      } catch (err) {
+        console.log(`[tts] Error accediendo a C:\\Texto a voz\\salidas: ${err.message}`);
         const wordCount = cleanedBody.split(/\s+/).length || 1;
         videoDurationSec = wordCount / config.wordsPerSecond;
       }
@@ -767,12 +774,16 @@ async function renderVideo({
 
   // Marca de agua en la parte inferior derecha, 60% transparente, aparece tras el introOffset
   if (useWatermark) {
-    // Escalar al 15% del ancho de pantalla manteniendo ratio, fijamos opacity al 40% (60% transparente)
-    const wmWidth = Math.round(config.width * 0.15);
-    const wmYOffset = Math.round(config.height * 0.08); // Margen inferior mas alto
+    // Leer config desde process.env (viene desde server.js)
+    const wmSizePercent = process.env.WATERMARK_SIZE ? parseInt(process.env.WATERMARK_SIZE) / 100 : 0.15;
+    const wmMarginY = process.env.WATERMARK_MARGIN_Y !== undefined ? parseInt(process.env.WATERMARK_MARGIN_Y) : 40;
+    const wmMarginX = process.env.WATERMARK_MARGIN_X !== undefined ? parseInt(process.env.WATERMARK_MARGIN_X) : 30;
+
+    // Escalar basado en el porcentaje del ancho de pantalla manteniendo ratio, fijamos opacity al 40% (60% transparente)
+    const wmWidth = Math.round(config.width * wmSizePercent);
     layers.push(`[${watermarkInputIndex}:v]scale=${wmWidth}:-1,colorchannelmixer=aa=0.40[wm_scaled]`);
     // Overlay abajo a la derecha, activando cuando empiece el subtitulo
-    layers.push(`[${finalVideoMapForDrawText}][wm_scaled]overlay=W-w-30:H-h-${wmYOffset}:enable='gte(t,${introOffset})'[with_wm]`);
+    layers.push(`[${finalVideoMapForDrawText}][wm_scaled]overlay=W-w-${wmMarginX}:H-h-${wmMarginY}:enable='gte(t,${introOffset})'[with_wm]`);
     finalVideoMapForDrawText = "with_wm";
   }
 
