@@ -1,0 +1,28 @@
+{
+  "batchQuantity": 1,
+  "resolution": "360",
+  "delaySecs": 10,
+  "skipTts": true,
+  "musicVolume": "0.14",
+  "ttsVolume": "1.1",
+  "bgBlurRadius": "",
+  "bgBlurPower": "",
+  "bgBrightness": "",
+  "zoomMin": "",
+  "zoomMax": "",
+  "panZoom": "",
+  "titleFontSize": "25",
+  "subtitleFontSize": "21",
+  "customVideoPipeline": "",
+  "savedPipelines": {
+    "Dinámico Suave (Prueba exitosa)": "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10,eq=brightness=-0.35:saturation=1.1,zoompan=z='1.0+0.0018*in':x='(iw-iw/zoom)*(in/150)':y='ih/2-(ih/zoom/2)+sin(in/30)*15':d=1:s=1080x1920:fps=30,format=yuv420p[bg];\n[0:v]scale=1080:1400:force_original_aspect_ratio=increase,crop=1080:1400,zoompan=z='1.0+0.003*in':x='(iw-iw/zoom)*(in/120)':y='ih/2-(ih/zoom/2)+sin(in/25)*25':d=1:s=1080x1400:fps=30,unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=1.2:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg];\n[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1",
+    "izquierda → derecha con zoom": "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10,eq=brightness=-0.35:saturation=1.1,zoompan=z='1.2':x='(iw-iw/zoom)*(on/150)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30,format=yuv420p[bg];\n\n[0:v]scale=1080:1400:force_original_aspect_ratio=increase,crop=1080:1400,zoompan=z='1.2+0.0008*on':x='(iw-iw/zoom)*(on/150)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1400:fps=30,unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=1.2:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg];\n\n[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1",
+    "TIKTOK VIRAL ENGINE v3": "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,\nboxblur=18:8,\neq=brightness=-0.25:saturation=1.15,\n\nzoompan=\nz='if(lte(on,75),1.0+0.0018*on,1.135-0.0018*(on-75))':\nx='(iw-iw/zoom)*(on/150)':\ny='ih/2-(ih/zoom/2)+sin(on/25)*10':\nd=1:s=1080x1920:fps=30,\n\nformat=yuv420p[bg];\n\n[0:v]scale=1080:1400:force_original_aspect_ratio=increase,crop=1080:1400,\nzoompan=\nz='if(lte(on,75),1.0+0.003*on,1.225-0.003*(on-75))':\nx='(iw-iw/zoom)*(on/120)':\ny='ih/2-(ih/zoom/2)+sin(on/22)*18':\nd=1:s=1080x1400:fps=30,\n\nunsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=1.3:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,\n\nformat=rgba[fg];\n\n[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1"
+  },
+  "activePipelineName": "random",
+  "maxDurationSec": "4",
+  "ttsMaxSpeed": "",
+  "enableIntroLogo": "random",
+  "subtitleYRatio": "0.80",
+  "testTts": true
+}

@@ -1,0 +1,96 @@
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+# Add current directory to path so it can import tts_local
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from tts_local.engine import XTTSService
+from tts_local.mms_engine import MMSService
+from tts_local.errors import AppError
+
+def _apply_speed_to_wav(path: Path, speed: float) -> None:
+    if abs(speed - 1.0) < 0.01:
+        return
+    try:
+        import librosa
+        import numpy as np
+        import soundfile as sf
+        audio, sample_rate = sf.read(str(path), dtype="float32", always_2d=False)
+        if audio.ndim == 1:
+            stretched = librosa.effects.time_stretch(audio, rate=speed)
+        else:
+            stretched_channels = []
+            for idx in range(audio.shape[1]):
+                stretched_channels.append(librosa.effects.time_stretch(audio[:, idx], rate=speed))
+            min_len = min(len(ch) for ch in stretched_channels)
+            stretched = np.stack([ch[:min_len] for ch in stretched_channels], axis=1)
+        sf.write(str(path), stretched, sample_rate)
+    except ImportError:
+        print("WARN: librosa or soundfile missing. Speed adjustment skipped.", file=sys.stderr)
+        
+def main():
+    parser = argparse.ArgumentParser("generar_tts")
+    parser.add_argument("--config", required=True, help="Ruta al tts-config.json")
+    parser.add_argument("--input-file", required=True, help="Ruta al archivo txt con el texto")
+    parser.add_argument("--output", required=True, help="Ruta de salida (e.g. output.wav)")
+    args = parser.parse_args()
+    
+    with open(args.config, "r", encoding="utf-8") as f:
+        config = json.load(f)
+        
+    with open(args.input_file, "r", encoding="utf-8") as f:
+        text = f.read().strip()
+        
+    os.environ["COQUI_TOS_AGREED"] = "1"
+    
+    output_path = Path(args.output).resolve()
+    model_key = config.get("model", "xtts_v2")
+    use_gpu = config.get("use_gpu", True)
+    retries = config.get("retries", 1)
+    speed = config.get("speed", 1.0)
+    
+    try:
+        if model_key == "xtts_v2":
+            service = XTTSService(use_gpu=use_gpu, retries=retries)
+            generation_kwargs = {
+                "temperature": float(config.get("temperature", 0.75)),
+                "length_penalty": float(config.get("length_penalty", 1.0)),
+                "repetition_penalty": float(config.get("repetition_penalty", 5.0)),
+                "top_k": int(config.get("top_k", 50)),
+                "top_p": float(config.get("top_p", 0.85)),
+            }
+            print(f"DEBUG: generation_kwargs types: { {k: type(v).__name__ for k, v in generation_kwargs.items()} }", file=sys.stderr)
+            print(f"DEBUG: generation_kwargs values: {generation_kwargs}", file=sys.stderr)
+            result = service.synthesize(
+                text=text,
+                output_path=output_path,
+                voice=config.get("voice", "es_female_default"),
+                language=config.get("language", "es"),
+                split_sentences=config.get("enable_text_splitting", config.get("split_sentences", True)),
+                generation_kwargs=generation_kwargs
+            )
+        else:
+            # Fallback to MMS or other models
+            actual_model_id = "ylacombe/mms-spa-finetuned-argentinian-monospeaker" if model_key == "mms_ar_mono" else model_key
+            service = MMSService(model_id=actual_model_id, use_gpu=use_gpu, retries=retries)
+            result = service.synthesize(
+                text=text,
+                output_path=output_path,
+                speaker_id=config.get("mms_speaker_id", 0)
+            )
+            
+        _apply_speed_to_wav(result.output_path, speed=speed)
+        print(json.dumps({"success": True, "output_path": str(result.output_path)}))
+        sys.exit(0)
+    except AppError as e:
+        print(json.dumps({"success": False, "error": str(e)}), file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(json.dumps({"success": False, "error": f"Error inesperado: {e}"}), file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

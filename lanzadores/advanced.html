@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orquestador de Videos en Lote</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 20%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.15) 0%, transparent 20%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #60a5fa, #34d399);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      margin-top: 10px;
+      font-size: 1.1rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: 600;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-save {
+      background: var(--card-border);
+      color: var(--text);
+      margin-bottom: 15px;
+    }
+
+    .btn-save:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-primary:disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-badge.idle { background: #64748b; }
+    .status-badge.running { background: #3b82f6; animation: pulse 2s infinite; }
+    .status-badge.cooldown { background: #eab308; }
+    .status-badge.finished { background: #10b981; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+    .stat-value { font-size: 1.5rem; font-weight: 800; }
+
+    .terminal {
+      background: #000;
+      color: #34d399;
+      font-family: 'Consolas', 'Courier New', monospace;
+      padding: 15px;
+      border-radius: 8px;
+      flex-grow: 1;
+      height: 300px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      border: 1px solid #1e293b;
+    }
+    
+    .terminal p { margin: 2px 0; }
+    
+    .form-range {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      outline: none;
+      transition: background 0.2s;
+    }
+    
+    .form-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(59, 130, 246, 0.6);
+      transition: transform 0.1s;
+    }
+    
+    .form-range::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .advanced-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .form-group-inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.1);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .form-group-inline label {
+      margin: 0;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .form-group-inline {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      white-space: nowrap;
+      flex-wrap: wrap; /* Permitir que los labels y sliders respiren en móviles */
+    }
+
+    .form-group-inline label {
+      min-width: 140px;
+    }
+
+    .range-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .range-wrapper input[type="range"] {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+      appearance: none;
+      outline: none;
+    }
+
+    .range-wrapper input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(59, 130, 246, 0.4);
+    }
+
+    .range-wrapper input[type="number"] {
+      width: 65px !important;
+      text-align: center;
+      padding: 5px;
+    }
+
+    .advanced-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .advanced-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin: 15px 0 10px 0;
+      letter-spacing: 1px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>⚙️ Ajustes Avanzados</h1>
+      <p>Configuración visual y parámetros FFmpeg</p>
+    </div>
+
+    <div class="layout" style="grid-template-columns: 1fr;">
+      <div class="glass-card">
+        <div style="margin-bottom: 25px; display: flex; gap: 15px;">
+          <a href="/index.html" class="btn btn-save" style="margin-bottom: 0; flex: 1; text-align: center; text-decoration: none;">◀ Volver al Panel</a>
+          <button id="btnSaveConfig" class="btn btn-primary" style="flex: 1;">Guardar Configuración</button>
+        </div>
+
+        <h2 style="margin-top:20px;">Pipeline de Video Remoto (Avanzado)</h2>
+        <div class="form-group" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px;">
+          
+          <label for="pipelineSelector" style="margin-bottom:8px; display:block;">Seleccionar Preset de Animación</label>
+          <div style="display:flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+            <select id="pipelineSelector" class="form-control" style="flex: 1; min-width: 200px; padding: 10px;">
+              <option value="">Automático por Defecto (El original del sistema)</option>
+            </select>
+            <div style="display: flex; gap: 8px;">
+              <button id="btnUpdatePipeline" style="background:#3b82f6; color:white; border:none; border-radius:4px; padding:8px 15px; cursor:pointer;" type="button">Actualizar</button>
+              <button id="btnSavePipelineAsNew" style="background:#10b981; color:white; border:none; border-radius:4px; padding:8px 15px; cursor:pointer;" type="button">Guardar Nuevo</button>
+              <button id="btnDeletePipeline" style="background:rgba(239, 68, 68, 0.2); color:#ef4444; border:1px solid #ef4444; border-radius:4px; padding:8px 15px; cursor:pointer;" type="button">Eliminar</button>
+            </div>
+          </div>
+
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+             <span>Código FFmpeg del Pipeline:</span>
+             <button id="btnLoadDefaultPipeline" style="background:rgba(255,255,255,0.1); border:1px solid var(--card-border); color:var(--text); border-radius:4px; padding:2px 8px; font-size:0.75rem; cursor:pointer;">Autocompletar Código Base</button>
+          </label>
+          <textarea id="customVideoPipeline" class="form-control" rows="8" placeholder="Escribe tu pipeline completo aquí..." style="margin-top: 8px; font-family: monospace; font-size: 0.9rem;"></textarea>
+          <small style="color:var(--text-muted); display:block; margin-top:10px; font-size:0.8rem;">
+            <i>(Escribe cualquier pipeline, luego presiona "Guardar Nuevo" para añadirlo a tu lista)</i>
+          </small>
+        </div>
+
+        <h2>Efectos de Intro</h2>
+        <div class="form-group-inline">
+          <label style="min-width: 250px;">Activar Intro con Logo y Transición</label>
+          <select id="enableIntroLogo" class="form-control" style="width: auto; min-width: 140px; padding: 5px 10px; border-radius: 6px;">
+            <option value="true">Sí (Siempre)</option>
+            <option value="false">No (Desactivado)</option>
+            <option value="random">Al azar (50/50)</option>
+          </select>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 20px;">
+          * Muestra logo.png por 1 seg con una transición aleatoria antes de iniciar la voz/video.
+        </p>
+
+        <h2>Límites del Video</h2>
+        <div class="form-group-inline">
+          <label>Duración Máxima (seg)</label>
+          <div class="range-wrapper">
+            <input type="range" id="maxDurationSecRange" min="5" max="300" step="1" oninput="sync('maxDurationSecRange','maxDurationSec')">
+            <input type="number" id="maxDurationSec" class="form-control" placeholder="90" oninput="sync('maxDurationSec','maxDurationSecRange')">
+          </div>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 20px;">
+          * El video se cortará al llegar a este tiempo (útil para Reels/TikTok < 60s).
+        </p>
+
+        <h2>Sincronización de Audio (TTS)</h2>
+        <div class="form-group-inline">
+          <label>Límite Velocidad (x)</label>
+          <div class="range-wrapper">
+            <input type="range" id="ttsMaxSpeedRange" min="1.0" max="2.0" step="0.05" oninput="sync('ttsMaxSpeedRange','ttsMaxSpeed')">
+            <input type="number" id="ttsMaxSpeed" class="form-control" step="0.1" placeholder="1.4" oninput="sync('ttsMaxSpeed','ttsMaxSpeedRange')">
+          </div>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 20px;">
+          * Si el audio es largo, se acelera hasta este tope para encajar en la duración máxima.
+        </p>
+
+        <h2>Filtros de Imagen</h2>
+        <div class="advanced-grid">
+          <div class="form-group-inline">
+            <label title="Radio del desenfoque del fondo">Blur Radius</label>
+            <div class="range-wrapper">
+              <input type="range" id="bgBlurRadiusRange" min="0" max="50" step="1" oninput="sync('bgBlurRadiusRange','bgBlurRadius')">
+              <input type="number" id="bgBlurRadius" class="form-control" placeholder="26" oninput="sync('bgBlurRadius','bgBlurRadiusRange')">
+            </div>
+          </div>
+          <div class="form-group-inline">
+            <label title="Potencia del efecto blur">Blur Power</label>
+            <div class="range-wrapper">
+              <input type="range" id="bgBlurPowerRange" min="0" max="25" step="1" oninput="sync('bgBlurPowerRange','bgBlurPower')">
+              <input type="number" id="bgBlurPower" class="form-control" placeholder="12" oninput="sync('bgBlurPower','bgBlurPowerRange')">
+            </div>
+          </div>
+        </div>
+        <div class="form-group-inline">
+          <label>Brillo Fondo</label>
+          <div class="range-wrapper">
+            <input type="range" id="bgBrightnessRange" min="-1.0" max="0" step="0.05" oninput="sync('bgBrightnessRange','bgBrightness')">
+            <input type="number" id="bgBrightness" class="form-control" step="0.05" placeholder="-0.5" oninput="sync('bgBrightness','bgBrightnessRange')">
+          </div>
+        </div>
+
+        <h2 style="margin-top:20px;">Animaciones (Ken Burns)</h2>
+        <div class="advanced-grid">
+          <div class="form-group-inline">
+            <label>Zoom Min</label>
+            <div class="range-wrapper">
+              <input type="range" id="zoomMinRange" min="1.0" max="1.1" step="0.005" oninput="sync('zoomMinRange','zoomMin')">
+              <input type="number" id="zoomMin" class="form-control" step="0.01" placeholder="1.01" oninput="sync('zoomMin','zoomMinRange')">
+            </div>
+          </div>
+          <div class="form-group-inline">
+            <label>Zoom Max</label>
+            <div class="range-wrapper">
+              <input type="range" id="zoomMaxRange" min="1.0" max="1.5" step="0.01" oninput="sync('zoomMaxRange','zoomMax')">
+              <input type="number" id="zoomMax" class="form-control" step="0.01" placeholder="1.18" oninput="sync('zoomMax','zoomMaxRange')">
+            </div>
+          </div>
+        </div>
+        <div class="form-group-inline">
+          <label>Travel Pan</label>
+          <div class="range-wrapper">
+            <input type="range" id="panZoomRange" min="1.0" max="1.3" step="0.01" oninput="sync('panZoomRange','panZoom')">
+            <input type="number" id="panZoom" class="form-control" step="0.01" placeholder="1.12" oninput="sync('panZoom','panZoomRange')">
+          </div>
+        </div>
+
+        <h2 style="margin-top:20px;">Tamaños de Texto (Manual)</h2>
+        <div class="advanced-grid">
+          <div class="form-group-inline">
+            <label>Título (px)</label>
+            <div class="range-wrapper">
+              <input type="range" id="titleFontSizeRange" min="10" max="150" step="1" oninput="sync('titleFontSizeRange','titleFontSize')">
+              <input type="number" id="titleFontSize" class="form-control" placeholder="21" oninput="sync('titleFontSize','titleFontSizeRange')">
+            </div>
+          </div>
+          <div class="form-group-inline">
+            <label>Subtítulos (px)</label>
+            <div class="range-wrapper">
+              <input type="range" id="subtitleFontSizeRange" min="10" max="250" step="1" oninput="sync('subtitleFontSizeRange','subtitleFontSize')">
+              <input type="number" id="subtitleFontSize" class="form-control" placeholder="60" oninput="sync('subtitleFontSize','subtitleFontSizeRange')">
+            </div>
+          </div>
+        </div>
+        <div class="form-group-inline">
+          <label title="Posición vertical (0.1=Arriba, 0.9=Abajo)">Posición Vertical Subtítulos</label>
+          <div class="range-wrapper">
+            <input type="range" id="subtitleYRatioRange" min="0.1" max="0.95" step="0.01" oninput="sync('subtitleYRatioRange','subtitleYRatio')">
+            <input type="number" id="subtitleYRatio" class="form-control" step="0.01" placeholder="0.80" oninput="sync('subtitleYRatio','subtitleYRatioRange')">
+          </div>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 5px;">
+          * Deja en blanco para usar el escalado automático basado en resolución.
+        </p>
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE DESCONEXIÓN -->
+  <div id="offlineOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;">
+    <div style="background: rgba(30, 41, 59, 1); border: 1px solid var(--danger); border-radius: 16px; padding: 40px; max-width: 600px; box-shadow: 0 10px 40px rgba(239, 68, 68, 0.2);">
+      <h2 style="color: var(--danger); border: none; font-size: 2rem;">⚠️ El Motor está Apagado</h2>
+      <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 30px;">
+        El navegador no puede conectarse con el orquestador.<br>
+        Por seguridad, los navegadores web no pueden ejecutar comandos en tu computadora por sí solos.
+      </p>
+      
+      <div style="background: #000; color: #34d399; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.2rem; margin-bottom: 20px;">
+        > Solución: Haz doble clic en <strong>lanzar_panel.bat</strong>
+      </div>
+      
+      <p style="font-size: 0.95rem; color: #64748b;">
+        Ese archivo abrirá el panel correctamente con todos los permisos habilitados.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Load existing config
+    // Helpers para sincronizar barras y numeros
+    function sync(srcId, destId) {
+      const src = document.getElementById(srcId);
+      const dest = document.getElementById(destId);
+      dest.value = src.value;
+    }
+
+    async function fetchConfig() {
+      try {
+        const r = await fetch('http://localhost:3005/api/config');
+        if (!r.ok) throw new Error("Offline");
+        const config = await r.json();
+        
+        document.getElementById('offlineOverlay').style.display = 'none';
+
+        document.getElementById('bgBlurRadius').value = config.bgBlurRadius || "";
+        document.getElementById('bgBlurPower').value = config.bgBlurPower || "";
+        document.getElementById('bgBrightness').value = config.bgBrightness || "";
+        document.getElementById('zoomMin').value = config.zoomMin || "";
+        document.getElementById('zoomMax').value = config.zoomMax || "";
+        document.getElementById('panZoom').value = config.panZoom || "";
+        document.getElementById('titleFontSize').value = config.titleFontSize || "";
+        document.getElementById('subtitleFontSize').value = config.subtitleFontSize || "";
+        document.getElementById('maxDurationSec').value = config.maxDurationSec || "";
+        document.getElementById('ttsMaxSpeed').value = config.ttsMaxSpeed || "";
+        document.getElementById('enableIntroLogo').value = String(config.enableIntroLogo !== undefined ? config.enableIntroLogo : "false");
+        document.getElementById('subtitleYRatio').value = config.subtitleYRatio || "0.80";
+
+        // Inicializar sliders
+        const numericIds = ['bgBlurRadius', 'bgBlurPower', 'bgBrightness', 'zoomMin', 'zoomMax', 'panZoom', 'titleFontSize', 'subtitleFontSize', 'maxDurationSec', 'ttsMaxSpeed', 'subtitleYRatio'];
+        numericIds.forEach(id => {
+          const val = document.getElementById(id).value;
+          if (val) document.getElementById(id + 'Range').value = val;
+        });
+        
+        // Manejo de Pipeline Presets
+        window.savedPipelines = config.savedPipelines || {
+          "Dinámico Suave (Prueba exitosa)": "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10,eq=brightness=-0.35:saturation=1.1,zoompan=z='1.0+0.0018*in':x='(iw-iw/zoom)*(in/150)':y='ih/2-(ih/zoom/2)+sin(in/30)*15':d=1:s=1080x1920:fps=30,format=yuv420p[bg];\n[0:v]scale=1080:1400:force_original_aspect_ratio=increase,crop=1080:1400,zoompan=z='1.0+0.003*in':x='(iw-iw/zoom)*(in/120)':y='ih/2-(ih/zoom/2)+sin(in/25)*25':d=1:s=1080x1400:fps=30,unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=1.2:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg];\n[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1"
+        };
+        window.activePipelineName = config.activePipelineName || "";
+        window.lastSelectedPresetName = (window.activePipelineName !== "manual") ? window.activePipelineName : "";
+        
+        renderPipelineSelector();
+        
+        if (window.activePipelineName === "manual") {
+            document.getElementById('customVideoPipeline').value = config.customVideoPipeline || "";
+        }
+
+      } catch (e) {
+        console.error("No se pudo conectar:", e);
+        document.getElementById('offlineOverlay').style.display = 'flex';
+      }
+    }
+
+    // Save config (It only pushes advanced changes, keeping previous config)
+    document.getElementById('btnSaveConfig').addEventListener('click', async () => {
+      const btn = document.getElementById('btnSaveConfig');
+      btn.textContent = "Guardando...";
+      
+      // Get full current configuration first
+      let fullConfig = {};
+      try {
+        const res = await fetch('http://localhost:3005/api/config');
+        fullConfig = await res.json();
+      } catch (e) { }
+
+      const newConfig = {
+        ...fullConfig,
+        bgBlurRadius: document.getElementById('bgBlurRadius').value,
+        bgBlurPower: document.getElementById('bgBlurPower').value,
+        bgBrightness: document.getElementById('bgBrightness').value,
+        zoomMin: document.getElementById('zoomMin').value,
+        zoomMax: document.getElementById('zoomMax').value,
+        panZoom: document.getElementById('panZoom').value,
+        titleFontSize: document.getElementById('titleFontSize').value,
+        subtitleFontSize: document.getElementById('subtitleFontSize').value,
+        maxDurationSec: document.getElementById('maxDurationSec').value,
+        ttsMaxSpeed: document.getElementById('ttsMaxSpeed').value,
+        enableIntroLogo: document.getElementById('enableIntroLogo').value,
+        subtitleYRatio: document.getElementById('subtitleYRatio').value,
+        customVideoPipeline: document.getElementById('customVideoPipeline').value,
+        savedPipelines: window.savedPipelines,
+        activePipelineName: window.activePipelineName
+      };
+      
+      await fetch('http://localhost:3005/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      }).catch(e => console.error("Error al guardar:", e));
+      setTimeout(() => btn.textContent = "Guardar Configuración", 1000);
+    });
+
+    // Populate Default
+    document.getElementById('btnLoadDefaultPipeline').addEventListener('click', () => {
+      document.getElementById('customVideoPipeline').value = 
+`[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=26:12,eq=brightness=-0.50:saturation=0.92,zoompan=z='min(zoom+0.00010,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30,format=yuv420p[bg];
+[0:v]scale=1080:1574:force_original_aspect_ratio=increase,crop=1080:1574,zoompan=z='min(zoom+0.00033,1.18)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1574:fps=30,unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=0.52:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg];
+[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1[base]`;
+      window.activePipelineName = "manual";
+      document.getElementById('pipelineSelector').value = "manual";
+    });
+
+    // Funciones para Pipeline Presets
+    function renderPipelineSelector() {
+      const sel = document.getElementById('pipelineSelector');
+      sel.innerHTML = '<option value="">Automático por Defecto (El original del sistema)</option>';
+      
+      // Opción de azar
+      let randomOpt = document.createElement('option');
+      randomOpt.value = "random";
+      randomOpt.textContent = "Al azar (Selección dinámica por video)";
+      sel.appendChild(randomOpt);
+
+      for (const name in window.savedPipelines) {
+        let opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      }
+      let manualOpt = document.createElement('option');
+      manualOpt.value = "manual";
+      manualOpt.textContent = "Personalizado (Editando Manualmente)";
+      sel.appendChild(manualOpt);
+      
+      sel.value = window.activePipelineName;
+      
+      if (window.activePipelineName && window.savedPipelines[window.activePipelineName]) {
+        document.getElementById('customVideoPipeline').value = window.savedPipelines[window.activePipelineName];
+      } else if (!window.activePipelineName) {
+        document.getElementById('customVideoPipeline').value = "";
+      }
+    }
+
+    document.getElementById('pipelineSelector').addEventListener('change', (e) => {
+      window.activePipelineName = e.target.value;
+      if (e.target.value !== "manual" && e.target.value !== "" && e.target.value !== "random") {
+        window.lastSelectedPresetName = e.target.value;
+      }
+      if (e.target.value === "" || e.target.value === "random") {
+        document.getElementById('customVideoPipeline').value = "";
+      } else if (window.savedPipelines[e.target.value]) {
+        document.getElementById('customVideoPipeline').value = window.savedPipelines[e.target.value];
+      }
+    });
+
+    document.getElementById('customVideoPipeline').addEventListener('input', () => {
+      // Si el usuario empieza a escribir y no estaba en manual, lo pasamos a manual
+      if (window.activePipelineName !== "manual" && window.activePipelineName !== "") {
+        window.lastSelectedPresetName = window.activePipelineName; // Guardamos cual editamos
+        window.activePipelineName = "manual";
+        document.getElementById('pipelineSelector').value = "manual";
+      }
+    });
+
+    document.getElementById('btnSavePipelineAsNew').addEventListener('click', () => {
+      const code = document.getElementById('customVideoPipeline').value.trim();
+      if (!code) {
+        alert("El código del pipeline está vacío. Escribe o pega código FFmpeg primero.");
+        return;
+      }
+      const name = prompt("Dale un nombre distintivo a esta Animación/Pipeline:");
+      if (name && name.trim()) {
+        window.savedPipelines[name.trim()] = code;
+        window.activePipelineName = name.trim();
+        renderPipelineSelector();
+        alert("¡Pipeline guardado! Ya puedes seleccionarlo de la lista.");
+      }
+    });
+
+    document.getElementById('btnUpdatePipeline').addEventListener('click', () => {
+      let name = window.activePipelineName;
+      if (name === "manual") name = window.lastSelectedPresetName;
+
+      if (!name || name === "") {
+        alert("Primero selecciona un preset de la lista para poder actualizarlo.");
+        return;
+      }
+      const code = document.getElementById('customVideoPipeline').value.trim();
+      if (!code) {
+        alert("El código del pipeline no puede estar vacío.");
+        return;
+      }
+      if (confirm(`¿Estás seguro de que quieres sobreescribir los cambios en el preset '${name}'?`)) {
+        window.savedPipelines[name] = code;
+        alert("¡Preset actualizado correctamente!");
+      }
+    });
+
+    document.getElementById('btnDeletePipeline').addEventListener('click', () => {
+      const name = window.activePipelineName;
+      if (!name || name === "manual") {
+        alert("No hay un pipeline guardado actualmente seleccionado para eliminar.");
+        return;
+      }
+      if (confirm(`¿Seguro que deseas eliminar el pipeline '${name}'?`)) {
+        delete window.savedPipelines[name];
+        window.activePipelineName = "";
+        renderPipelineSelector();
+        alert("Pipeline eliminado.");
+      }
+    });
+
+    // Check status periodically for overlay
+    setInterval(async () => {
+      try {
+        const r = await fetch('http://localhost:3005/api/status');
+        if (!r.ok) throw new Error("Offline");
+        document.getElementById('offlineOverlay').style.display = 'none';
+      } catch(e) {
+        document.getElementById('offlineOverlay').style.display = 'flex';
+      }
+    }, 2000);
+
+    // Initial load
+    fetchConfig();
+  </script>
+</body>
+</html>

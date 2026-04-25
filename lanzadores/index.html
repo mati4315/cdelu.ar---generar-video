@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orquestador de Videos en Lote</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 20%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.15) 0%, transparent 20%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #60a5fa, #34d399);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      margin-top: 10px;
+      font-size: 1.1rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: 600;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-save {
+      background: var(--card-border);
+      color: var(--text);
+      margin-bottom: 15px;
+    }
+
+    .btn-save:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-primary:disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-badge.idle { background: #64748b; }
+    .status-badge.running { background: #3b82f6; animation: pulse 2s infinite; }
+    .status-badge.cooldown { background: #eab308; }
+    .status-badge.finished { background: #10b981; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+    .stat-value { font-size: 1.5rem; font-weight: 800; }
+
+    .terminal {
+      background: #000;
+      color: #34d399;
+      font-family: 'Consolas', 'Courier New', monospace;
+      padding: 15px;
+      border-radius: 8px;
+      flex-grow: 1;
+      height: 300px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      border: 1px solid #1e293b;
+    }
+    
+    .terminal p { margin: 2px 0; }
+    
+    .form-range {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      outline: none;
+      transition: background 0.2s;
+    }
+    
+    .form-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(59, 130, 246, 0.6);
+      transition: transform 0.1s;
+    }
+    
+    .form-range::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .advanced-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .form-group-inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.1);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .form-group-inline label {
+      margin: 0;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .form-group-inline input {
+      width: 80px;
+      text-align: right;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin: 15px 0 10px 0;
+      letter-spacing: 1px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Cdelu Orquestador</h1>
+      <p>Lanzamiento automatizado de videos por lotes</p>
+    </div>
+
+    <div class="layout">
+      <!-- Ajustes -->
+      <div class="glass-card">
+        <h2>Parámetros de Ejecución</h2>
+        
+        <div class="form-group">
+          <label for="batchQuantity">Cantidad de Videos a Generar</label>
+          <input type="number" id="batchQuantity" class="form-control" value="3" min="1" max="20">
+        </div>
+
+        <div class="form-group">
+          <label for="resolution">Resolución (Altura en pixeles)</label>
+          <select id="resolution" class="form-control">
+            <option value="360">360p (Pruebas súper rápidas)</option>
+            <option value="480">480p (Estándar Web)</option>
+            <option value="720">720p (HD 1280x720)</option>
+            <option value="1080">1080p (Full HD)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="delaySecs">Pausa entre videos (Segundos)</label>
+          <input type="number" id="delaySecs" class="form-control" value="10" min="5">
+          <small style="color:var(--text-muted); display:block; margin-top:5px; font-size:0.8rem;">
+            La pausa ayuda a no saturar el procesador térmicamente.
+          </small>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; margin-bottom: 20px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label for="musicVolume" style="margin: 0;">Volumen Música de Fondo</label>
+              <span id="musicVolLabel" style="font-weight: 600; color: var(--primary);">10%</span>
+            </div>
+            <input type="range" min="0" max="1" step="0.01" id="musicVolume" class="form-range" value="0.10" style="width: 100%;">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label for="ttsVolume" style="margin: 0;">Volumen Voz Narrador</label>
+              <span id="ttsVolLabel" style="font-weight: 600; color: var(--primary);">180%</span>
+            </div>
+            <input type="range" min="0" max="3" step="0.05" id="ttsVolume" class="form-range" value="1.80" style="width: 100%;">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+          <input type="checkbox" id="skipTts" style="width: 20px; height: 20px; cursor: pointer;">
+          <label for="skipTts" style="margin: 0; cursor: pointer;">Omitir TTS</label>
+          
+          <div id="testTtsContainer" style="display: none; align-items: center; gap: 10px; margin-left: 20px;">
+            <input type="checkbox" id="testTts" style="width: 20px; height: 20px; cursor: pointer;">
+            <label for="testTts" style="margin: 0; cursor: pointer; color: var(--accent);">Test (Usar último audio)</label>
+          </div>
+        </div>
+
+        <div style="margin-top: 25px;">
+          <button id="btnSaveConfig" class="btn btn-save">Guardar Configuración</button>
+          <a href="/advanced.html" class="btn btn-save" style="margin-bottom: 15px; text-align: center; text-decoration: none; display: block; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2);">⚙️ Ajustes Avanzados</a>
+          <button id="btnStartBatch" class="btn btn-primary">⚡ Empezar Lote</button>
+        </div>
+      </div>
+
+      <!-- Consola / Estado -->
+      <div class="glass-card status-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
+          <h2 style="margin: 0; border: none; padding: 0;">Monitor de Proceso</h2>
+          <span id="statusBadge" class="status-badge idle">Inactivo</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat-item">
+            <div class="stat-label">PROGRESO</div>
+            <div class="stat-value" id="valProgress">0 / 0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">ÚLTIMA EJECUCIÓN</div>
+            <div class="stat-value" id="valLastRun">--:--</div>
+          </div>
+        </div>
+
+        <div class="terminal" id="terminalLog">
+          <p>> Esperando comandos...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE DESCONEXIÓN -->
+  <div id="offlineOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;">
+    <div style="background: rgba(30, 41, 59, 1); border: 1px solid var(--danger); border-radius: 16px; padding: 40px; max-width: 600px; box-shadow: 0 10px 40px rgba(239, 68, 68, 0.2);">
+      <h2 style="color: var(--danger); border: none; font-size: 2rem;">⚠️ El Motor está Apagado</h2>
+      <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 30px;">
+        El navegador no puede conectarse con el orquestador.<br>
+        Por seguridad, los navegadores web no pueden ejecutar comandos en tu computadora por sí solos.
+      </p>
+      
+      <div style="background: #000; color: #34d399; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.2rem; margin-bottom: 20px;">
+        > Solución: Haz doble clic en <strong>lanzar_panel.bat</strong>
+      </div>
+      
+      <p style="font-size: 0.95rem; color: #64748b;">
+        Ese archivo abrirá el panel correctamente con todos los permisos habilitados.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // UI Updates
+    function updateVolumeLabels() {
+      const musicVal = parseFloat(document.getElementById('musicVolume').value);
+      const ttsVal = parseFloat(document.getElementById('ttsVolume').value);
+      document.getElementById('musicVolLabel').textContent = Math.round(musicVal * 100) + '%';
+      document.getElementById('ttsVolLabel').textContent = Math.round(ttsVal * 100) + '%';
+    }
+
+    document.getElementById('musicVolume').addEventListener('input', updateVolumeLabels);
+    document.getElementById('ttsVolume').addEventListener('input', updateVolumeLabels);
+
+    document.getElementById('skipTts').addEventListener('change', (e) => {
+      document.getElementById('testTtsContainer').style.display = e.target.checked ? 'flex' : 'none';
+      if (!e.target.checked) document.getElementById('testTts').checked = false;
+    });
+
+    // Load existing config
+    async function fetchConfig() {
+      try {
+        const r = await fetch('http://localhost:3005/api/config');
+        if (!r.ok) throw new Error("Offline");
+        const config = await r.json();
+        
+        document.getElementById('offlineOverlay').style.display = 'none';
+
+        document.getElementById('batchQuantity').value = config.batchQuantity || 3;
+        document.getElementById('resolution').value = config.resolution || "360";
+        document.getElementById('delaySecs').value = config.delaySecs || 10;
+        document.getElementById('skipTts').checked = !!config.skipTts;
+        document.getElementById('testTts').checked = !!config.testTts;
+        document.getElementById('testTtsContainer').style.display = config.skipTts ? 'flex' : 'none';
+        if(config.musicVolume !== undefined) document.getElementById('musicVolume').value = config.musicVolume;
+        if(config.ttsVolume !== undefined) document.getElementById('ttsVolume').value = config.ttsVolume;
+        updateVolumeLabels();
+      } catch (e) {
+        console.error("No se pudo conectar:", e);
+        document.getElementById('offlineOverlay').style.display = 'flex';
+      }
+    }
+
+    // Save config
+    document.getElementById('btnSaveConfig').addEventListener('click', async () => {
+      const btn = document.getElementById('btnSaveConfig');
+      btn.textContent = "Guardando...";
+      
+      // Get full current configuration first to avoid losing advanced fields
+      let fullConfig = {};
+      try {
+        const res = await fetch('http://localhost:3005/api/config');
+        fullConfig = await res.json();
+      } catch (e) { }
+
+      const newConfig = {
+        ...fullConfig,
+        batchQuantity: parseInt(document.getElementById('batchQuantity').value),
+        resolution: document.getElementById('resolution').value,
+        delaySecs: parseInt(document.getElementById('delaySecs').value),
+        skipTts: document.getElementById('skipTts').checked,
+        testTts: document.getElementById('testTts').checked,
+        musicVolume: document.getElementById('musicVolume').value,
+        ttsVolume: document.getElementById('ttsVolume').value
+      };
+      
+      await fetch('http://localhost:3005/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      }).catch(e => console.error("Error al guardar:", e));
+      setTimeout(() => btn.textContent = "Guardar Configuración", 1000);
+    });
+
+    // Start batch
+    document.getElementById('btnStartBatch').addEventListener('click', async () => {
+      document.getElementById('btnStartBatch').disabled = true;
+      try {
+        const r = await fetch('http://localhost:3005/api/start', { method: 'POST' });
+        const data = await r.json();
+        if (data.error) alert(data.error);
+        else document.getElementById('valLastRun').textContent = new Date().toLocaleTimeString();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    // Periodic status poll
+    setInterval(async () => {
+      try {
+        const r = await fetch('http://localhost:3005/api/status');
+        if (!r.ok) throw new Error("Offline");
+        
+        document.getElementById('offlineOverlay').style.display = 'none';
+
+        const data = await r.json();
+        
+        // Update badging
+        const badge = document.getElementById('statusBadge');
+        badge.className = `status-badge ${data.state.status.toLowerCase()}`;
+        badge.textContent = data.state.status;
+        
+        // Disable Start if running
+        document.getElementById('btnStartBatch').disabled = data.isRunning;
+        
+        // Update progress
+        document.getElementById('valProgress').textContent = `${data.state.current} / ${data.state.total}`;
+        
+        // Render logs
+        const term = document.getElementById('terminalLog');
+        if (data.state.logs && data.state.logs.length > 0) {
+          // check if we need to auto scroll
+          const isScrolledToBottom = term.scrollHeight - term.clientHeight <= term.scrollTop + 1;
+          
+          term.innerHTML = data.state.logs.map(l => `<p>${l}</p>`).join('');
+          
+          if (isScrolledToBottom) {
+            term.scrollTop = term.scrollHeight;
+          }
+        }
+      } catch (e) {
+        document.getElementById('offlineOverlay').style.display = 'flex';
+      }
+    }, 1500);
+
+    // Initial load
+    fetchConfig();
+  </script>
+</body>
+</html>

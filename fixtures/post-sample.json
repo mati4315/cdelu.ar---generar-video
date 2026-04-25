@@ -1,0 +1,9 @@
+{
+  "id": 12345,
+  "titulo": "<h1>Prueba de titular para video</h1>",
+  "descripcion": "<p>Este es un contenido de prueba para validar subtitulos y duracion.</p><p>Incluye mas de una frase para simular un caso real.</p>",
+  "images": [
+    "https://cdn.example.com/media/portada.jpg"
+  ],
+  "createdAt": "2026-04-23T03:15:00Z"
+}
