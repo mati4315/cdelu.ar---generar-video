@@ -181,7 +181,7 @@ async function pickPostToProcess(targetPostId) {
   return normalizePost(pendingPosts[pendingPosts.length - 1]);
 }
 
-const TTS_PYTHON_EXEC = "C:\\Texto a voz\\.venv311\\Scripts\\python.exe";
+const TTS_PYTHON_EXEC = "D:\\generador de video noticia\\generador del audio\\.venv311\\Scripts\\python.exe";
 const TTS_SCRIPT = path.resolve(cwd, "tts_engine", "generate_tts.py");
 const TTS_CONFIG = path.resolve(cwd, "tts-config.json");
 
@@ -298,8 +298,8 @@ async function processPost(post, options) {
         console.log(`[tts] Sincronizando audio factor=${ttsSpeedFactor.toFixed(2)} (orig=${rawTtsDuration.toFixed(2)}s, final=${videoDurationSec.toFixed(2)}s)`);
       }
     } else if (options.testTts) {
-      console.log("[tts] Modo Test-TTS activo: Buscando ultimo audio generado en C:\\Texto a voz\\salidas...");
-      const ttsExternalDir = "C:\\Texto a voz\\salidas";
+      console.log("[tts] Modo Test-TTS activo: Buscando ultimo audio generado en D:\\generador de video noticia\\generador del audio\\salidas...");
+      const ttsExternalDir = "D:\\generador de video noticia\\generador del audio\\salidas";
       try {
         const files = await fsp.readdir(ttsExternalDir);
         const ttsFiles = files.filter(f => f.endsWith(".wav"));
@@ -325,12 +325,12 @@ async function processPost(post, options) {
             videoDurationSec = wordCount / config.wordsPerSecond;
           }
         } else {
-          console.log("[tts] No se encontro audio en C:\\Texto a voz\\salidas. Omitiendo.");
+          console.log("[tts] No se encontro audio en D:\\generador de video noticia\\generador del audio\\salidas. Omitiendo.");
           const wordCount = cleanedBody.split(/\s+/).length || 1;
           videoDurationSec = wordCount / config.wordsPerSecond;
         }
       } catch (err) {
-        console.log(`[tts] Error accediendo a C:\\Texto a voz\\salidas: ${err.message}`);
+        console.log(`[tts] Error accediendo a D:\\generador de video noticia\\generador del audio\\salidas: ${err.message}`);
         const wordCount = cleanedBody.split(/\s+/).length || 1;
         videoDurationSec = wordCount / config.wordsPerSecond;
       }

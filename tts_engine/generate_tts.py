@@ -1,6 +1,8 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import argparse
 import json
-import os
+import re
 import sys
 from pathlib import Path
 
@@ -31,6 +33,21 @@ def _apply_speed_to_wav(path: Path, speed: float) -> None:
     except ImportError:
         print("WARN: librosa or soundfile missing. Speed adjustment skipped.", file=sys.stderr)
         
+def _clean_text(text: str) -> str:
+    """Omitir enlaces, direcciones web y caracteres especiales innecesarios para el audio."""
+    # 1. Eliminar URLs (http://, https://, www.)
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)
+    # 2. Eliminar correos electronicos
+    text = re.sub(r'\S+@\S+', '', text)
+    # 3. Reemplazar caracteres especiales que no aportan al audio por espacios
+    # (Mantenemos signos de puntuacion normales que ayudan a la entonacion: . , ! ? : ;)
+    unwanted_chars = r'[*_~|@#\\/<>^]'
+    text = re.sub(unwanted_chars, ' ', text)
+    
+    # 4. Normalizar espacios en blanco
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
 def main():
     parser = argparse.ArgumentParser("generar_tts")
     parser.add_argument("--config", required=True, help="Ruta al tts-config.json")
@@ -42,7 +59,7 @@ def main():
         config = json.load(f)
         
     with open(args.input_file, "r", encoding="utf-8") as f:
-        text = f.read().strip()
+        text = _clean_text(f.read())
         
     os.environ["COQUI_TOS_AGREED"] = "1"
     
