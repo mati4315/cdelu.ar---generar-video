@@ -1,5 +1,5 @@
 {
-  "batchQuantity": 1,
+  "batchQuantity": 2,
   "resolution": "720",
   "delaySecs": 30,
   "skipTts": false,

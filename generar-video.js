@@ -721,7 +721,7 @@ async function renderVideo({
     }
   } else {
     layers.push(
-      `[0:v]scale=${config.width}:${config.height}:force_original_aspect_ratio=increase,crop=${config.width}:${config.height},boxblur=${renderTuning.bgBlurRadius}:${renderTuning.bgBlurPower},eq=brightness=${renderTuning.bgBrightness.toFixed(2)}:saturation=0.92,zoompan=z='min(zoom+0.00010,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${config.width}x${config.height}:fps=${config.fps},format=yuv420p[bg]`,
+      `[0:v]scale=${config.width}:${config.height}:force_original_aspect_ratio=increase,crop=${config.width}:${config.height},boxblur=${renderTuning.bgBlurRadius}:${renderTuning.bgBlurPower},eq=brightness=${renderTuning.bgBrightness.toFixed(2)}:saturation=0.92,fps=${config.fps},format=yuv420p[bg]`,
       `[0:v]scale=${fgWidth}:${fgHeight}:force_original_aspect_ratio=increase,crop=${fgWidth}:${fgHeight},zoompan=z='${motion.z}':x='${motion.x}':y='${motion.y}':d=1:s=${fgWidth}x${fgHeight}:fps=${config.fps},unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=${renderTuning.fgSharpen.toFixed(2)}:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=0.0,format=rgba[fg]`,
       "[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1[base]"
     );
@@ -856,7 +856,9 @@ async function renderVideo({
     "-c:v",
     "libx264",
     "-preset",
-    "medium",
+    "ultrafast",
+    "-threads",
+    "0",
     "-pix_fmt",
     "yuv420p",
     "-profile:v",
@@ -1351,7 +1353,7 @@ function getRenderTuning(currentConfig) {
     fgHeightRatio: clampNumber(0.82 - (lowResFactor * 0.07), 0.74, 0.82),
     fgSharpen: clampNumber(0.52 + (lowResFactor * 0.20), 0.50, 0.80),
     bgBlurRadius: process.env.BG_BLUR_RADIUS ? parseInt(process.env.BG_BLUR_RADIUS) : clampNumber(Math.round(26 * widthScale), 10, 26),
-    bgBlurPower: process.env.BG_BLUR_POWER ? parseInt(process.env.BG_BLUR_POWER) : clampNumber(Math.round(12 * widthScale), 4, 12),
+    bgBlurPower: process.env.BG_BLUR_POWER ? parseInt(process.env.BG_BLUR_POWER) : clampNumber(Math.round(3 * widthScale), 2, 3),
     bgBrightness: process.env.BG_BRIGHTNESS ? parseFloat(process.env.BG_BRIGHTNESS) : clampNumber(-0.50 + (lowResFactor * 0.08), -0.50, -0.38),
     zoomMin: process.env.ZOOM_MIN ? parseFloat(process.env.ZOOM_MIN) : clampNumber(1.01 + (lowResFactor * 0.01), 1.01, 1.03),
     zoomMax: process.env.ZOOM_MAX ? parseFloat(process.env.ZOOM_MAX) : clampNumber(1.18 - (lowResFactor * 0.05), 1.12, 1.18),

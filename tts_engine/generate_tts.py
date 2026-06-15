@@ -48,6 +48,62 @@ def _clean_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+def _split_long_sentence_recursive(text: str, max_chars: int = 200) -> list[str]:
+    text = text.strip()
+    if len(text) <= max_chars:
+        return [text]
+        
+    best_split_idx = -1
+    for punct in [';', ':', ',', ' -']:
+        idx = text[:max_chars].rfind(punct)
+        if idx > best_split_idx:
+            if punct == ' -':
+                best_split_idx = idx
+            else:
+                best_split_idx = idx + 1
+                
+    if best_split_idx != -1 and best_split_idx > 20:
+        left = text[:best_split_idx].strip()
+        if left[-1] in [',', ';', ':', '-']:
+            left = left[:-1].strip()
+        if not left[-1] in ['.', '!', '?']:
+            left += '.'
+        right = text[best_split_idx:].strip()
+        return [left] + _split_long_sentence_recursive(right, max_chars)
+        
+    space_idx = text[:max_chars].rfind(' ')
+    if space_idx != -1 and space_idx > 20:
+        left = text[:space_idx].strip()
+        if not left[-1] in ['.', '!', '?']:
+            left += '.'
+        right = text[space_idx:].strip()
+        return [left] + _split_long_sentence_recursive(right, max_chars)
+        
+    left = text[:max_chars].strip()
+    if not left[-1] in ['.', '!', '?']:
+        left += '.'
+    right = text[max_chars:].strip()
+    return [left] + _split_long_sentence_recursive(right, max_chars)
+
+def _split_text_into_tts_sentences(text: str, max_chars: int = 200) -> str:
+    raw_sentences = re.split(r'(?<=[.!?])\s+|\n+', text)
+    final_sentences = []
+    for sentence in raw_sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        if len(sentence) <= max_chars:
+            final_sentences.append(sentence)
+        else:
+            parts = _split_long_sentence_recursive(sentence, max_chars)
+            for part in parts:
+                part = part.strip()
+                if part:
+                    if not part[-1] in ['.', '!', '?']:
+                        part += '.'
+                    final_sentences.append(part)
+    return ' '.join(final_sentences)
+
 def main():
     parser = argparse.ArgumentParser("generar_tts")
     parser.add_argument("--config", required=True, help="Ruta al tts-config.json")
@@ -60,6 +116,7 @@ def main():
         
     with open(args.input_file, "r", encoding="utf-8") as f:
         text = _clean_text(f.read())
+        text = _split_text_into_tts_sentences(text, max_chars=200)
         
     os.environ["COQUI_TOS_AGREED"] = "1"
     
@@ -79,8 +136,6 @@ def main():
                 "top_k": int(config.get("top_k", 50)),
                 "top_p": float(config.get("top_p", 0.85)),
             }
-            print(f"DEBUG: generation_kwargs types: { {k: type(v).__name__ for k, v in generation_kwargs.items()} }", file=sys.stderr)
-            print(f"DEBUG: generation_kwargs values: {generation_kwargs}", file=sys.stderr)
             result = service.synthesize(
                 text=text,
                 output_path=output_path,
